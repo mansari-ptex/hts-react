@@ -78,91 +78,79 @@ export const USA_ENGINE = {
     // ⭐ MAIN ENGINE FUNCTION (UI will call ONLY this)
     getDutyRate(item, exportingCountry, findParentWithRateFn) {
 
-        // 🛡️ SAFETY GUARD (VERY IMPORTANT)
         if (!item) {
             return {
                 value: "N/A",
                 inherited: false,
                 column: "general",
-                additionalDuty: null,
-                reciprocalTariff: null,
+                additionalDuty1: null,
+                additionalDuty2: null,
                 totalDuty: "N/A"
             };
         }
     
         const rateField = this.getRateColumn(exportingCountry, item, findParentWithRateFn);
-    
         let rate = item[rateField];
     
-        if (!rate || rate === "" || rate === "N/A") {
-            const inheritedRate = this.inheritRate(item, rateField, findParentWithRateFn);
-    
-            if (inheritedRate) {
-                // include overrides and compute totals even for inherited rates
-                const overrides = getCountryOverrides(exportingCountry) || {};
-                const additional = overrides.additionalDuty ?? null;
-                const reciprocal = overrides.reciprocalTariff ?? null;
-
-                const parseNum = (v) => {
-                    if (v === null || v === undefined) return NaN;
-                    if (typeof v === 'number') return v;
-                    const m = String(v).match(/-?\d+(?:\.\d+)?/);
-                    return m ? parseFloat(m[0]) : NaN;
-                };
-
-                const baseNum = parseNum(inheritedRate);
-                const addNum = parseNum(additional);
-                const recNum = parseNum(reciprocal);
-                const totalNum = Number.isFinite(baseNum) ?
-                    (Number.isFinite(addNum) ? baseNum + addNum + (Number.isFinite(recNum) ? recNum : 0) : (Number.isFinite(recNum) ? baseNum + recNum : NaN))
-                    : NaN;
-
-                return {
-                    value: inheritedRate,
-                    inherited: true,
-                    column: rateField,
-                    additionalDuty: additional,
-                    reciprocalTariff: reciprocal,
-                    totalDuty: Number.isFinite(totalNum) ? totalNum : "N/A"
-                };
-            }
-    
-            return {
-                value: "N/A",
-                inherited: false,
-                column: rateField,
-                additionalDuty: null,
-                reciprocalTariff: null,
-                totalDuty: "N/A"
-            };
-        }
-
-        // Have a direct rate value — include overrides and compute total
         const overrides = getCountryOverrides(exportingCountry) || {};
-        const additional = overrides.additionalDuty ?? null;
-        const reciprocal = overrides.reciprocalTariff ?? null;
-
+        const additional1 = overrides.additionalDuty1 ?? null;
+        const additional2 = overrides.additionalDuty2 ?? null;
+    
         const parseNum = (v) => {
             if (v === null || v === undefined) return NaN;
-            if (typeof v === 'number') return v;
+            if (typeof v === "number") return v;
             const m = String(v).match(/-?\d+(?:\.\d+)?/);
             return m ? parseFloat(m[0]) : NaN;
         };
+    
+        const formatTwoDecimals = (num) => num.toFixed(2);
 
-        const baseNum = parseNum(rate);
-        const addNum = parseNum(additional);
-        const recNum = parseNum(reciprocal);
-        const totalNum = Number.isFinite(baseNum) ?
-            (Number.isFinite(addNum) ? baseNum + addNum + (Number.isFinite(recNum) ? recNum : 0) : (Number.isFinite(recNum) ? baseNum + recNum : NaN))
-            : NaN;
-
-        return {
-            value: rate,
-            inherited: false,
-            column: rateField,
-            additionalDuty: additional,
-            reciprocalTariff: reciprocal,
-            totalDuty: Number.isFinite(totalNum) ? totalNum : "N/A"
+        const computeTotalDisplay = (baseRate, additional1, additional2) => {
+            const baseNum = parseNum(baseRate);
+            const add1Num = parseNum(additional1);
+            const add2Num = parseNum(additional2);
+        
+            if (!Number.isFinite(baseNum)) return "N/A";
+        
+            const finalTotal =
+                baseNum +
+                (Number.isFinite(add1Num) ? add1Num : 0) +
+                (Number.isFinite(add2Num) ? add2Num : 0);
+        
+            return finalTotal.toFixed(2) + "%";
         };
+    
+if (!rate || rate === "" || rate === "N/A") {
+    const inheritedRate = this.inheritRate(item, rateField, findParentWithRateFn);
+
+    if (inheritedRate) {
+        return {
+            value: inheritedRate,
+            inherited: true,
+            column: rateField,
+            additionalDuty1: additional1,
+            additionalDuty2: additional2,
+            totalDuty: computeTotalDisplay(inheritedRate, additional1, additional2)
+        };
+    }
+
+    return {
+        value: "N/A",
+        inherited: false,
+        column: rateField,
+        additionalDuty1: null,
+        additionalDuty2: null,
+        totalDuty: "N/A"
+    };
+}
+
+return {
+    value: rate,
+    inherited: false,
+    column: rateField,
+    additionalDuty1: additional1,
+    additionalDuty2: additional2,
+    totalDuty: computeTotalDisplay(rate, additional1, additional2)
+};
     }
 };

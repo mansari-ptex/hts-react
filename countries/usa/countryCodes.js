@@ -27,6 +27,6 @@ export const COUNTRY_CODE_MAP = {
   "Sweden":"SE","Switzerland":"CH","Syria":"SY","Taiwan":"TW","Tajikistan":"TJ","Tanzania":"TZ","Thailand":"TH","Timor-Leste":"TL","Togo":"TG","Tokelau":"TK",
   "Tonga":"TO","Trinidad and Tobago":"TT","Tunisia":"TN","Turkiye":"TR","Turkmenistan":"TM","Turks and Caicos Islands":"TC","Tuvalu":"TV","Uganda":"UG",
   "Ukraine":"UA","United Arab Emirates":"AE","United Kingdom":"GB","United States":"US","United States Minor Outlying Islands":"UM","Uruguay":"UY",
-  "Uzbekistan":"UZ","Vanuatu":"VU","Venezuela":"VE","Viet Nam":"VN","Virgin Islands (US)":"VI","Virgin Islands (British)":"VG","Wallis and Futuna":"WF",
+  "Uzbekistan":"UZ","Vanuatu":"VU","Venezuela":"VE","VietNam":"VN","Virgin Islands (US)":"VI","Virgin Islands (British)":"VG","Wallis and Futuna":"WF",
   "West Bank":"WE","Yemen":"YE","Zambia":"ZM","Zimbabwe":"ZW"
 };

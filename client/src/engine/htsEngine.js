@@ -75,24 +75,31 @@ function getHierarchyPath(item) {
 }
 
 function getFullDescription(item) {
-                    let descriptions = [item.description];
-                    let currentIndent = parseInt(item.indent);
-                    let currentIndex = appState.masterData.indexOf(item);
+    if (!item) return '';
+    let descriptions = [item.description || ''];
+    let currentIndent = parseInt(item.indent || 0);
+    
+    let currentIndex = appState.masterData.indexOf(item);
+    if (currentIndex === -1) {
+        currentIndex = appState.masterData.findIndex(i => i.htsno === item.htsno && i.description === item.description);
+    }
 
-                    for (let i = currentIndex - 1; i >= 0; i--) {
-                        const prevItem = appState.masterData[i];
-                        const prevIndent = parseInt(prevItem.indent);
+    if (currentIndex !== -1) {
+        for (let i = currentIndex - 1; i >= 0; i--) {
+            const prevItem = appState.masterData[i];
+            const prevIndent = parseInt(prevItem.indent);
 
-                        if (prevIndent < currentIndent) {
-                            descriptions.unshift(prevItem.description);
-                            currentIndent = prevIndent;
-                        }
+            if (prevIndent < currentIndent) {
+                descriptions.unshift(prevItem.description);
+                currentIndent = prevIndent;
+            }
 
-                        if (currentIndent === 0) break;
-                    }
+            if (currentIndent === 0) break;
+        }
+    }
 
-                    return descriptions.join(' > ');
-                }
+    return descriptions.join(' > ');
+}
 
 function isTenDigitHTS(htsno) {
     if (!htsno) return false;

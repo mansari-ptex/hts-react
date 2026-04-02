@@ -16,7 +16,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Initialize Data
-dataController.init();
+await dataController.init();
 
 // Routes
 app.use('/api', dataRoutes);

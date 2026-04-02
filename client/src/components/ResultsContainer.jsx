@@ -56,8 +56,9 @@ const HighlightedText = ({ text, keywords, enabled }) => {
 /**
  * Main ResultsContainer
  */
-function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFilters }) {
+function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFilters, keywords, searchTerm }) {
   const [showRelated, setShowRelated] = useState(false);
+  const [visiblePrimaryCount, setVisiblePrimaryCount] = useState(12);
   const { primary, related } = results;
   const exportingCountry = selectedFilters.exportingCountry || 'Select Country';
 
@@ -69,6 +70,24 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
     selectedFilters.feature,
     selectedFilters.category
   ].filter(val => val && val !== 'All' && val !== '');
+
+  // Sort primary results to bring exact leaf matches to the top
+  const sortedPrimary = React.useMemo(() => {
+    if (!searchTerm) return primary;
+    const term = searchTerm.toLowerCase();
+    return [...primary].sort((a, b) => {
+      const aLeafMatch = a.description && a.description.toLowerCase().includes(term);
+      const bLeafMatch = b.description && b.description.toLowerCase().includes(term);
+      if (aLeafMatch && !bLeafMatch) return -1;
+      if (!aLeafMatch && bLeafMatch) return 1;
+      return 0; // Keep existing order
+    });
+  }, [primary, searchTerm]);
+
+  // Reset visible count when primary results change (new search/filter)
+  React.useEffect(() => {
+    setVisiblePrimaryCount(12);
+  }, [primary]);
 
   if (primary.length === 0 && related.length === 0) {
     return (
@@ -107,7 +126,7 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
               </tr>
             </thead>
             <tbody>
-                  {primary.map((item, idx) => (
+                  {sortedPrimary.slice(0, visiblePrimaryCount).map((item, idx) => (
                     <ResultRow 
                       key={item.code + idx} 
                       item={item} 
@@ -120,6 +139,18 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
                   ))}
             </tbody>
           </table>
+          
+          {sortedPrimary.length > visiblePrimaryCount && (
+            <div className="view-more-container" style={{ textAlign: 'center', marginTop: '15px' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setVisiblePrimaryCount(prev => prev + 50)}
+                style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                View {sortedPrimary.length - visiblePrimaryCount} more matches
+              </button>
+            </div>
+          )}
         </div>
       )}
 

@@ -7,8 +7,8 @@ import { syncAll } from '../services/htsDownloader.js';
  */
 export const dataController = {
   // Initialize data on server startup
-  init: () => {
-    loadAndSyncData();
+  init: async () => {
+    await loadAndSyncData();
   },
 
   getStatus: (req, res) => {

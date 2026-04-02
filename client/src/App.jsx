@@ -56,6 +56,7 @@ function App() {
         onShowDetails={(item) => setDetailModal({ open: true, data: item })}
         selectedFilters={selectedFilters}
         keywords={keywords}
+        searchTerm={searchTerm}
       />
 
       {detailModal.open && (

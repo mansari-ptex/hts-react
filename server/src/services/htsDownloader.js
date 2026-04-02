@@ -78,8 +78,7 @@ export async function syncAll() {
       console.log(`[Sync] ✅ Finished: ${source.name}`);
     }
     
-    console.log('[Sync] 🔄 All downloads successful. Rebuilding database...');
-    loadAndSyncData();
+    console.log('[Sync] 🔄 All downloads successful.');
     console.log('--- GLOBAL SYNC COMPLETE ---');
     
     return { success: true, timestamp: new Date() };

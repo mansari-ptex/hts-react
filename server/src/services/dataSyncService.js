@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sanitizeHTS, buildChapter99Map } from './htsProcessor.js';
+import { syncAll } from './htsDownloader.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = path.join(__dirname, '../../data/raw');
@@ -26,17 +27,32 @@ try {
 /**
  * CORE DATA SYNCHRONIZATION
  */
-export const loadAndSyncData = () => {
+export const loadAndSyncData = async () => {
     try {
         console.log('[SyncService] Starting data synchronization...');
+
+        // 1. Gather main HTS data (Chapters 61 & 62)
+        // Check if raw data exists
+        if (!fs.existsSync(HTS_DIR)) fs.mkdirSync(HTS_DIR, { recursive: true });
+        if (!fs.existsSync(CH99_DIR)) fs.mkdirSync(CH99_DIR, { recursive: true });
+
+        let htsFiles = fs.readdirSync(HTS_DIR).filter(f => f.endsWith('.json'));
+
+        // AUTOMATED INITIAL DOWNLOAD:
+        // If no HTS files AND no clean cache exist, trigger full download
+        if (htsFiles.length === 0 && !fs.existsSync(CLEAN_DATA_PATH)) {
+            console.log('[SyncService] 🛑 No data found. Triggering automated initial download from USITC...');
+            const syncResult = await syncAll();
+            if (!syncResult.success) {
+                throw new Error('[SyncService] Initial download failed: ' + syncResult.error);
+            }
+            // Refresh file list after download
+            htsFiles = fs.readdirSync(HTS_DIR).filter(f => f.endsWith('.json'));
+        }
+
         lastSyncTimestamp = new Date(); // Update on every successful run
 
-        // Create directories if they don't exist
-        [RAW_DIR, CH99_DIR, HTS_DIR].forEach(dir => {
-          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        });
-
-        // 1. Build Chapter 99 Map (LATEST ONLY)
+        // Now proceed with normal gathering and mapping
         const ch99Files = fs.readdirSync(CH99_DIR)
           .filter(f => f.endsWith('.json'))
           .sort((a, b) => b.localeCompare(a));
@@ -52,7 +68,7 @@ export const loadAndSyncData = () => {
         }
 
         // 2. Gather main HTS data (Chapters 61 & 62)
-        const htsFiles = fs.readdirSync(HTS_DIR).filter(f => f.endsWith('.json'));
+        htsFiles = fs.readdirSync(HTS_DIR).filter(f => f.endsWith('.json'));
         let htsRaw = [];
         htsFiles.forEach(file => {
           const data = JSON.parse(fs.readFileSync(path.join(HTS_DIR, file), 'utf8'));

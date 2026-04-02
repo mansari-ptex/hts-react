@@ -1,4 +1,17 @@
-import { escapeRegExp } from '../engine/htsEngine.js';
+/**
+ * Escape special characters for RegExp
+ */
+export function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Normalize text for comparison
+ */
+export function normalizeText(text) {
+  if (!text) return "";
+  return text.trim().toLowerCase();
+}
 
 export function highlightText(text, highlightEnabled, searchWords = [], genderTerms = [], fabricTerms = [], featureTerms = []) {
   if (!highlightEnabled) return text;

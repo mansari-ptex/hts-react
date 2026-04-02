@@ -1,44 +1,57 @@
 import React, { useState } from 'react';
-import { 
-    highlightText,
-    highlightInheritedParts
-} from '../utils/helpers.js';
-import { 
-    getFullDescription, 
-    getRateLabel, 
-    normalizeText
-} from '../engine/htsEngine.js';
-import { USA_ENGINE as COUNTRY_ENGINE } from '../countries/usa/engine.js';
-import { findParentWithRate } from '../engine/htsEngine.js';
-import { GENDER_TERMS } from '../constants/genderRules.js';
+import { getEffectiveDuty, extractSpecialCodes } from '../utils/dutyUtils';
+import { REVERSE_COUNTRY_CODE_MAP } from '../countries/usa/countryCodes';
 
-function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFilters, keywords }) {
+/**
+ * Legend Component for HTS Special Rate Codes
+ */
+const HTSLegend = ({ records }) => {
+  const codes = extractSpecialCodes(records);
+  if (codes.length === 0) return null;
+
+  return (
+    <div className="hts-legend">
+      <h4>HTS Special Rate Legend</h4>
+      <div className="legend-grid">
+        {codes.map(code => (
+          <div key={code} className="legend-item">
+            <span className="legend-code">{code}</span>
+            <span className="legend-name">{REVERSE_COUNTRY_CODE_MAP[code] || 'Unknown Program'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Main ResultsContainer
+ */
+function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFilters }) {
   const [showRelated, setShowRelated] = useState(false);
   const { primary, related } = results;
+  const exportingCountry = selectedFilters.exportingCountry || 'Select Country';
 
   if (primary.length === 0 && related.length === 0) {
     return (
       <div id="resultsContainer">
         <div className="no-results">
-          Select filters to view HTS codes
+          Search for HTS codes or select a category to begin
         </div>
       </div>
     );
   }
-
-  const genderTerms = selectedFilters.gender && selectedFilters.gender !== 'All' ? GENDER_TERMS[selectedFilters.gender] : [];
-  const fabricTerms = selectedFilters.fabric && selectedFilters.fabric !== 'All' ? [normalizeText(selectedFilters.fabric)] : [];
-  const featureTerms = selectedFilters.feature && selectedFilters.feature !== 'All' ? [normalizeText(selectedFilters.feature)] : [];
-  const categoryTerms = keywords.map(kw => normalizeText(kw));
-  const exportingCountry = selectedFilters.exportingCountry || 'USA';
 
   return (
     <div id="resultsContainer">
       <div className="results-header">
         <div className="count-breakdown">
           <div className="count-item">Total Results: {primary.length + related.length}</div>
-          <div className="count-item primary">Match Results: {primary.length}</div>
-          <div className="count-item secondary">Related Results: {related.length}</div>
+          {primary.length > 0 && <div className="count-item primary">Match Results: {primary.length}</div>}
+          {related.length > 0 && <div className="count-item secondary">Related Results: {related.length}</div>}
+        </div>
+        <div className="active-country">
+            Showing duties for: <strong>{exportingCountry}</strong>
         </div>
       </div>
 
@@ -50,25 +63,18 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
                 <th>#</th>
                 <th>HTS Code</th>
                 <th>Description</th>
-                <th>Rate Type</th>
-                <th>Rate of Duty</th>
-                <th>Additional Duty 1</th>
-                <th>Additional Duty 2</th>
-                <th>Total Duty Rate</th>
+                <th>General Rate</th>
+                <th>Special Eligibility</th>
+                <th>Final Duty ({exportingCountry})</th>
               </tr>
             </thead>
             <tbody>
               {primary.map((item, idx) => (
                 <ResultRow 
-                  key={item.htsno + idx} 
+                  key={item.code + idx} 
                   item={item} 
                   index={idx} 
-                  highlightEnabled={highlightEnabled}
                   onShowDetails={onShowDetails}
-                  genderTerms={genderTerms}
-                  fabricTerms={fabricTerms}
-                  featureTerms={featureTerms}
-                  categoryTerms={categoryTerms}
                   exportingCountry={exportingCountry}
                 />
               ))}
@@ -92,25 +98,17 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
                       <th>#</th>
                       <th>HTS Code</th>
                       <th>Description</th>
-                      <th>Rate Type</th>
-                      <th>Rate</th>
-                      <th>Additional Duty 1</th>
-                      <th>Additional Duty 2</th>
-                      <th>Total Duty Rate</th>
+                      <th>General</th>
+                      <th>Final Duty</th>
                     </tr>
                   </thead>
                   <tbody>
                     {related.map((item, idx) => (
                       <ResultRow 
-                        key={item.htsno + idx} 
+                        key={item.code + idx} 
                         item={item} 
                         index={idx} 
-                        highlightEnabled={highlightEnabled}
                         onShowDetails={onShowDetails}
-                        genderTerms={genderTerms}
-                        fabricTerms={fabricTerms}
-                        featureTerms={featureTerms}
-                        categoryTerms={categoryTerms}
                         exportingCountry={exportingCountry}
                       />
                     ))}
@@ -121,41 +119,28 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
           )}
         </div>
       )}
+
+      {/* LEGEND SECTION */}
+      <HTSLegend records={[...primary, ...related]} />
     </div>
   );
 }
 
-function ResultRow({ item, index, highlightEnabled, onShowDetails, genderTerms, fabricTerms, featureTerms, categoryTerms, exportingCountry }) {
-  const rateInfo = COUNTRY_ENGINE.getDutyRate(
-    item,
-    exportingCountry,
-    findParentWithRate
-  );
-
-  const fullDescription = getFullDescription(item);
+function ResultRow({ item, index, onShowDetails, exportingCountry }) {
+  const duty = getEffectiveDuty(item, exportingCountry);
   
-  const highlightedDesc = highlightInheritedParts(
-    fullDescription,
-    item.description,
-    highlightEnabled,
-    categoryTerms, // Use category keywords as search words
-    genderTerms,
-    fabricTerms,
-    featureTerms
-  );
-
   return (
-    <tr onClick={() => onShowDetails(item)}>
+    <tr onClick={() => onShowDetails(item)} className={duty.isMatch ? 'high-match' : ''}>
       <td className="row-number">{index + 1}</td>
       <td>
         <div className="hts-code-wrapper">
           <a
-            href={`https://hts.usitc.gov/search?query=${encodeURIComponent(item.htsno)}`}
+            href={`https://hts.usitc.gov/search?query=${encodeURIComponent(item.code)}`}
             target="_blank"
             className="hts-code-link"
             onClick={(e) => e.stopPropagation()}
           >
-            {item.htsno}
+            {item.code}
           </a>
           <button
             className="hts-info-btn"
@@ -165,12 +150,13 @@ function ResultRow({ item, index, highlightEnabled, onShowDetails, genderTerms, 
           </button>
         </div>
       </td>
-      <td dangerouslySetInnerHTML={{ __html: highlightedDesc }}></td>
-      <td>{getRateLabel(rateInfo.column)}</td>
-      <td>{rateInfo.value}</td>
-      <td>{rateInfo.additionalDuty1 ?? ''}</td>
-      <td>{rateInfo.additionalDuty2 ?? ''}</td>
-      <td>{rateInfo.totalDuty ?? ''}</td>
+      <td>{item.description}</td>
+      <td>{item.general_rate}</td>
+      <td className="special-rate-cell">{item.special_rate || '—'}</td>
+      <td className={`final-duty-cell ${duty.type.includes('Special') ? 'benefit' : ''}`}>
+        <div className="duty-value">{duty.rate}</div>
+        <div className="duty-type">{duty.type}</div>
+      </td>
     </tr>
   );
 }

@@ -4,7 +4,7 @@ import CategoryMenu from './CategoryMenu';
 import { USA_ENGINE } from '../countries/usa/engine.js';
 import { FABRIC_CLASSIFICATION_HTML } from '../constants/fabricRules.js';
 import { MATERIAL_NEUTRAL_CATEGORIES } from '../constants/genderRules.js';
-import { normalizeText } from '../engine/htsEngine.js';
+import { normalizeText } from '../utils/helpers.js';
 import { categoryDescriptions } from '../constants/categories.js';
 
 function FilterSection({ 

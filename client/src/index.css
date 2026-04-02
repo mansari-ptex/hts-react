@@ -159,55 +159,24 @@ input[type="text"] {
     table-layout: fixed;   /* ⭐ THIS IS THE KEY */
 }
 
-/* Column sizing */
+/* Column sizing for 6-column layout */
 .results-table th:nth-child(1),
-.results-table td:nth-child(1) {
-    width: 52px;   /* # column */
-}
+.results-table td:nth-child(1) { width: 50px; } /* # */
 
 .results-table th:nth-child(2),
-.results-table td:nth-child(2) {
-    width: 160px;  /* HTS Code (increased to avoid clipping) */
-}
+.results-table td:nth-child(2) { width: 140px; } /* HTS Code */
 
 .results-table th:nth-child(3),
-.results-table td:nth-child(3) {
-    width: 45%;   /* Slightly reduce Description width to accommodate HTS code */
-}
+.results-table td:nth-child(3) { width: auto; } /* Description */
 
-/* Allow table cells to wrap nicely */
-.results-table th,
-.results-table td {
-    word-wrap: break-word;     /* old name */
-    overflow-wrap: break-word; /* modern */
-}
-
-/* Rate Type column */
 .results-table th:nth-child(4),
-.results-table td:nth-child(4) {
-    width: 120px; /* Rate Type */
-}
+.results-table td:nth-child(4) { width: 120px; } /* General Rate */
 
 .results-table th:nth-child(5),
-.results-table td:nth-child(5) {
-    width: 110px; /* Rate of Duty */
-}
+.results-table td:nth-child(5) { width: 220px; } /* Special Eligibility */
 
-/* New duty columns: Additional, Reciprocal, Total */
 .results-table th:nth-child(6),
-.results-table td:nth-child(6) {
-    width: 110px;
-}
-
-.results-table th:nth-child(7),
-.results-table td:nth-child(7) {
-    width: 110px;
-}
-
-.results-table th:nth-child(8),
-.results-table td:nth-child(8) {
-    width: 110px;
-}
+.results-table td:nth-child(6) { width: 160px; } /* Final Duty */
 
 
 
@@ -1272,4 +1241,140 @@ transform: translateY(0);
 .hts-info-btn:hover {
     background: #667eea;
     color: #fff;
+}
+
+/* HTS Legend Styles */
+.hts-legend {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    border-radius: 10px;
+}
+
+.hts-legend h4 {
+    margin-bottom: 15px;
+    color: #4338ca;
+    font-size: 16px;
+    border-bottom: 2px solid #e0e7ff;
+    padding-bottom: 8px;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.legend-code {
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #dbeafe;
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 32px;
+    text-align: center;
+}
+
+/* Final Duty Cell Styles */
+.final-duty-cell {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+.final-duty-cell.benefit {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.duty-value {
+    font-size: 15px;
+}
+
+.duty-type {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.benefit .duty-type {
+    color: #059669;
+}
+
+/* Modal Enhancements */
+.duty-breakdown-main {
+    text-align: center;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f3f4f6;
+    border-radius: 8px;
+}
+
+.final-duty-display {
+    font-size: 32px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.final-duty-display small {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.final-duty-display.benefit {
+    color: #059669;
+}
+
+.trade-logic-note {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #92400e;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.rate-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.rate-item {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.rate-item label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.rate-item span {
+    font-weight: 600;
+    color: #374151;
+}
+
+.rate-item.highlightable {
+    border-color: #667eea;
+    background: #f0f4ff;
 }

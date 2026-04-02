@@ -27,6 +27,33 @@ export const apiService = {
     }
   },
 
+  syncHTS: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/sync`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = `Server error (${res.status})`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorJson.message || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      return await res.json();
+    } catch (error) {
+      console.error("API Error: syncHTS failed", error);
+      // Ensure we pass the meaningful message upwards
+      throw error;
+    }
+  },
+
   getMetadata: async () => {
     try {
       const res = await fetch(`${BASE_URL}/metadata`);

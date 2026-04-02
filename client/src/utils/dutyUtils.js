@@ -1,48 +1,24 @@
-import { COUNTRY_CODE_MAP } from '../countries/usa/countryCodes';
-
-// Column 2 Countries (Subject to highest duties)
-const COLUMN_2_ISO = ['CU', 'KP', 'RU', 'BY']; // Cuba, North Korea, Russia, Belarus
+import { USA_ENGINE } from '../countries/usa/engine';
 
 /**
- * Parses and determines the effective duty rate based on country of origin
+ * Parses and determines the effective duty rate using the unified USA_ENGINE
  */
 export const getEffectiveDuty = (item, countryName) => {
-  if (!item) return { rate: 'N/A', type: 'General', section301: 0 };
+  if (!item) return { rate: 'N/A', type: 'General', section301: 0, total: 'N/A' };
 
-  const iso = COUNTRY_CODE_MAP[countryName];
-  const section301 = (iso === 'CN') ? (item.section301_rate || 0) : 0;
-  
-  // 1️⃣ Column 2 Check
-  if (iso && COLUMN_2_ISO.includes(iso)) {
-    return {
-      rate: item.other_rate || item.general_rate,
-      type: 'Column 2 (Other)',
-      isMatch: true,
-      section301
-    };
-  }
+  // Call the robust engine
+  // Note: We pass null for findParentWithRateFn for now, 
+  // as deep inheritance is usually pre-calculated or handled in the modal.
+  const engineResult = USA_ENGINE.getDutyRate(item, countryName, null);
 
-  // 2️⃣ Special Rate Check (FTA/Programs)
-  if (iso && item.special_rate) {
-    const isoRegex = new RegExp(`(?<=[^A-Z]|^)${iso}(?=[^A-Z]|$)`, 'i');
-    
-    if (isoRegex.test(item.special_rate)) {
-      const specialRateValue = item.special_rate.split('(')[0].trim();
-      return {
-        rate: specialRateValue || 'Free',
-        type: `Special (FTA: ${iso})`,
-        isMatch: true,
-        section301
-      };
-    }
-  }
-
-  // 3️⃣ Fallback to General Rate
   return {
-    rate: item.general_rate || 'Free',
-    type: 'General',
-    isMatch: false,
-    section301
+    rate: engineResult.value,
+    type: engineResult.column === 'other' ? 'Column 2 (Other)' : 
+          engineResult.column === 'special' ? 'Special (FTA)' : 'General',
+    isMatch: engineResult.column !== 'general',
+    section301: parseFloat(engineResult.additionalDuty1) || 0,
+    total: engineResult.totalDuty,
+    inherited: engineResult.inherited
   };
 };
 

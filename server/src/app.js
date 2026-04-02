@@ -3,16 +3,20 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dataRoutes from './routes/dataRoutes.js';
+import { dataController } from './controllers/dataController.js';
 
 const app = express();
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for easier dev if needed, or configure properly
+  contentSecurityPolicy: false, 
 }));
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
+
+// Initialize Data
+dataController.init();
 
 // Routes
 app.use('/api', dataRoutes);

@@ -9,3 +9,29 @@ export const COUNTRY_CODE_MAP = {
 export const REVERSE_COUNTRY_CODE_MAP = Object.fromEntries(
   Object.entries(COUNTRY_CODE_MAP).map(([name, code]) => [code, name])
 );
+
+export const USA_PROGRAM_NAMES = {
+  "A": "GSP (Generalized System of Preferences)",
+  "A*": "GSP (Exclusions apply)",
+  "A+": "GSP (Least-Developed Countries)",
+  "AU": "Australia FTA",
+  "BH": "Bahrain FTA",
+  "CA": "Canada (USMCA)",
+  "CL": "Chile FTA",
+  "CO": "Colombia FTA",
+  "E": "CBERA (Caribbean Basin)",
+  "E*": "CBERA (Exclusions apply)",
+  "IL": "Israel FTA",
+  "JO": "Jordan FTA",
+  "JP": "Japan Trade Agreement",
+  "KR": "Korea FTA (KORUS)",
+  "MA": "Morocco FTA",
+  "MX": "Mexico (USMCA)",
+  "OM": "Oman FTA",
+  "P": "DR-CAFTA (Dominican Republic-Central America)",
+  "PA": "Panama FTA",
+  "PE": "Peru FTA",
+  "R": "CBTPA (Caribbean Trade Partnership)",
+  "S": "USMCA (United States-Mexico-Canada Agreement)",
+  "SG": "Singapore FTA"
+};

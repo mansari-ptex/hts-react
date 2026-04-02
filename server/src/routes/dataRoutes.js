@@ -8,5 +8,6 @@ router.get('/search', dataController.searchHTS);
 router.get('/metadata', dataController.getMetadata);
 router.get('/hierarchy/:code', dataController.getHierarchy);
 router.get('/code/:code', dataController.getByCode);
+router.post('/sync', dataController.syncData);
 
 export default router;

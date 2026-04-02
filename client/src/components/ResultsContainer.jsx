@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getEffectiveDuty, extractSpecialCodes } from '../utils/dutyUtils';
-import { REVERSE_COUNTRY_CODE_MAP } from '../countries/usa/countryCodes';
+import { REVERSE_COUNTRY_CODE_MAP, USA_PROGRAM_NAMES } from '../countries/usa/countryCodes';
 
 /**
  * Legend Component for HTS Special Rate Codes
@@ -16,7 +16,9 @@ const HTSLegend = ({ records }) => {
         {codes.map(code => (
           <div key={code} className="legend-item">
             <span className="legend-code">{code}</span>
-            <span className="legend-name">{REVERSE_COUNTRY_CODE_MAP[code] || 'Unknown Program'}</span>
+            <span className="legend-name">
+              {USA_PROGRAM_NAMES[code] || REVERSE_COUNTRY_CODE_MAP[code] || 'Special Program'}
+            </span>
           </div>
         ))}
       </div>
@@ -72,7 +74,7 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
     return (
       <div id="resultsContainer">
         <div className="no-results">
-          Search for HTS codes or select a category to begin
+          Select filters to begin classifying your products
         </div>
       </div>
     );
@@ -192,14 +194,22 @@ function ResultRow({ item, index, onShowDetails, exportingCountry, highlightEnab
       </td>
       <td>
         <div className="row-description">
-            <HighlightedText text={item.description} keywords={keywords} enabled={highlightEnabled} />
+            <HighlightedText text={item.full_description || item.description} keywords={keywords} enabled={highlightEnabled} />
         </div>
       </td>
       <td>{item.general_rate}</td>
       <td className="special-rate-cell">{item.special_rate || '—'}</td>
-      <td className={`final-duty-cell ${duty.type.includes('Special') ? 'benefit' : ''}`}>
-        <div className="duty-value">{duty.rate}</div>
+      <td className={`final-duty-cell ${duty.isMatch ? 'benefit' : ''}`}>
+        <div className="duty-value">{duty.total}</div>
         <div className="duty-type">{duty.type}</div>
+        {duty.section301 > 0 && (
+          <div className="duty-badge badge-section301">
+            + {duty.section301}% Section 301
+          </div>
+        )}
+        {duty.inherited && (
+          <div className="duty-badge badge-inherited">Inherited</div>
+        )}
       </td>
     </tr>
   );

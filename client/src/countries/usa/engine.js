@@ -31,11 +31,11 @@ export const USA_ENGINE = {
         if (!iso) return "general";
     
         // 2️⃣ Get SPECIAL column text (inherit if empty)
-        let specialText = item.special || "";
+        let specialText = item.special_rate || "";
     
         if (!specialText || specialText === "N/A") {
-            const parent = findParentWithRateFn?.(item, "special");
-            if (parent?.special) specialText = parent.special;
+            const parent = typeof findParentWithRateFn === 'function' ? findParentWithRateFn(item, "special_rate") : null;
+            if (parent?.special_rate) specialText = parent.special_rate;
         }
     
         if (!specialText) return "general";
@@ -68,11 +68,12 @@ export const USA_ENGINE = {
 
     // ⭐ PRIVATE — inherit rate from parent nodes
     inheritRate(item, rateField, findParentWithRateFn) {
-        const parent = findParentWithRateFn(item, rateField);
+        if (typeof findParentWithRateFn !== 'function') return null;
+        const parent = findParentWithRateFn(item, rateField + "_rate");
 
         if (!parent) return null;
 
-        return parent[rateField] || null;
+        return parent[rateField + "_rate"] || null;
     },
 
     // ⭐ MAIN ENGINE FUNCTION (UI will call ONLY this)
@@ -89,34 +90,40 @@ export const USA_ENGINE = {
             };
         }
     
+        const iso = COUNTRY_CODE_MAP[exportingCountry];
         const rateField = this.getRateColumn(exportingCountry, item, findParentWithRateFn);
-        let rate = item[rateField];
+        let rate = item[rateField + "_rate"];
     
         const overrides = getCountryOverrides(exportingCountry) || {};
-        const additional1 = overrides.additionalDuty1 ?? null;
+        
+        // Use section301_rate from data for China, otherwise use overrides
+        const additional1 = (iso === 'CN' && item.section301_rate) 
+            ? `${item.section301_rate}%` 
+            : (overrides.additionalDuty1 ?? null);
+            
         const additional2 = overrides.additionalDuty2 ?? null;
     
         const parseNum = (v) => {
-            if (v === null || v === undefined) return NaN;
+            if (v === null || v === undefined || v === "") return 0;
             if (typeof v === "number") return v;
+            
+            // Handle X% + Y strings (e.g. "41¢/kg + 16.3%")
+            // We focus on the percentage part for the total display
+            const percentMatch = String(v).match(/(\d+(?:\.\d+)?)%/);
+            if (percentMatch) return parseFloat(percentMatch[1]);
+            
             const m = String(v).match(/-?\d+(?:\.\d+)?/);
-            return m ? parseFloat(m[0]) : NaN;
+            return m ? parseFloat(m[0]) : 0;
         };
     
-        const formatTwoDecimals = (num) => num.toFixed(2);
-
         const computeTotalDisplay = (baseRate, additional1, additional2) => {
             const baseNum = parseNum(baseRate);
             const add1Num = parseNum(additional1);
             const add2Num = parseNum(additional2);
         
-            if (!Number.isFinite(baseNum)) return "N/A";
+            if (baseRate === "N/A" || baseRate === null) return "N/A";
         
-            const finalTotal =
-                baseNum +
-                (Number.isFinite(add1Num) ? add1Num : 0) +
-                (Number.isFinite(add2Num) ? add2Num : 0);
-        
+            const finalTotal = baseNum + add1Num + add2Num;
             return finalTotal.toFixed(2) + "%";
         };
     

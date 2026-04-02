@@ -14,11 +14,19 @@ function AdminSection({ totalRecords, status }) {
 
   return (
     <div id="adminSection" className="admin-section" style={{ display: 'block' }}>
-      <div className="stats">
+      <div className="stats" style={{ display: 'flex', gap: '20px' }}>
         <div className="stat-box">
           <div className="stat-label">Total Records</div>
           <div className="stat-value" id="totalResults">{totalRecords}</div>
         </div>
+        {status.lastUpdated && (
+          <div className="stat-box">
+            <div className="stat-label">Last Database Sync</div>
+            <div className="stat-value" style={{ fontSize: '14px', marginTop: '5px' }}>
+              {new Date(status.lastUpdated).toLocaleString()}
+            </div>
+          </div>
+        )}
       </div>
       <div className="upload-section">
         <h3>Import Chapter JSON File (Admin Only)</h3>

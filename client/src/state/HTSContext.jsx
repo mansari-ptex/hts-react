@@ -112,11 +112,28 @@ export const HTSProvider = ({ children }) => {
   const runSearch = useCallback(async () => {
     const { selectedFilters, searchTerm } = state;
     
-    // Search can now run even without a query to support pure categorical filtering
-    const query = searchTerm || selectedFilters.category || '';
+    const isFilterApplied = 
+      searchTerm.trim() !== '' ||
+      selectedFilters.category !== '' ||
+      (selectedFilters.gender !== 'All' && selectedFilters.gender !== '') ||
+      (selectedFilters.material !== 'All' && selectedFilters.material !== '') ||
+      (selectedFilters.fabric !== 'All' && selectedFilters.fabric !== '') ||
+      (selectedFilters.feature !== 'All' && selectedFilters.feature !== '');
+
+    if (!isFilterApplied) {
+      dispatch({ 
+        type: 'SET_RESULTS', 
+        payload: { 
+          results: { primary: [], related: [] }, 
+          keywords: [] 
+        } 
+      });
+      return;
+    }
 
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
+      const query = searchTerm || selectedFilters.category || '';
       const data = await apiService.searchHTS(query, {
         gender: selectedFilters.gender,
         material: selectedFilters.material,
@@ -136,7 +153,7 @@ export const HTSProvider = ({ children }) => {
         } 
       });
 
-      if (results.length === 0) {
+      if ((data.primary?.length || 0) === 0 && (data.related?.length || 0) === 0) {
         showStatus("No matching HTS found", false);
       }
       

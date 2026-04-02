@@ -89,33 +89,33 @@ export const buildChapter99Map = (rawData) => {
 export const sanitizeHTS = (rawData, ch99Map = {}) => {
   if (!Array.isArray(rawData)) return [];
 
-  // --- STAGE 1: FILTERING & BASIC SANITIZATION ---
+  // --- STAGE 1: HIERARCHY BUILDING ---
   const validRecordsMapped = new Map();
   const rawList = [];
+  const indentStack = []; // will hold { code, indent }
 
-  for (const row of rawData) {
-    if (
-      !row.htsno || 
-      row.htsno.trim() === "" || 
-      row.superior === "true" || 
-      row.superior === true
-    ) {
-      continue;
+  for (let i = 0; i < rawData.length; i++) {
+    const row = rawData[i];
+    
+    // Skip invalid rows without a description
+    if (!row.description) continue;
+
+    let code = (row.htsno || "").trim();
+    if (!code) {
+      code = `sys_group_${i}`; // Synthetic ID for grouping nodes
     }
 
-    const code = row.htsno.trim();
+    const indent = parseInt(row.indent || "0", 10);
     const cleanDesc = stripHtml(row.description);
     const extracted = extractCategories(cleanDesc);
     
-    // Clean units array
     const units = Array.isArray(row.units) ? row.units : (row.units ? [row.units] : []);
     const cleanUnits = [...new Set(units.map(u => stripHtml(u)))].filter(Boolean);
 
-    // Extract Section 301 Rate from Footnotes
+    // Section 301 Rate extraction
     let section301Rate = 0;
     if (row.footnotes && row.footnotes.length > 0) {
       row.footnotes.forEach(fn => {
-        // Look for Chapter 99 codes in the note (e.g., 9903.88.15)
         const match = fn.value?.match(/9903\.?88\.?\d{2}/);
         if (match) {
           const refCode = match[0].replace(/\./g, '');
@@ -125,6 +125,12 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
         }
       });
     }
+
+    // Determine accurate parent using the indent stack
+    while (indentStack.length > 0 && indentStack[indentStack.length - 1].indent >= indent) {
+      indentStack.pop();
+    }
+    const parentCode = indentStack.length > 0 ? indentStack[indentStack.length - 1].code : null;
 
     const record = {
       code,
@@ -138,8 +144,12 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
       other_rate: row.other || "",
       unit: cleanUnits,
       section301_rate: section301Rate,
-      _raw: row 
+      level: indent,
+      parent: parentCode,
+      is_leaf: false
     };
+
+    indentStack.push({ code, indent });
 
     if (!validRecordsMapped.has(code)) {
       validRecordsMapped.set(code, record);
@@ -147,76 +157,81 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
     }
   }
 
-  // --- STAGE 2: HIERARCHY & ORPHAN HANDLING ---
-  rawList.forEach(record => {
-    const code = record.code;
-    const parts = code.split(".");
-    record.level = parts.length - 1;
-
-    let parentResolved = null;
-    let tempParts = [...parts];
-
-    while (tempParts.length > 1) {
-      tempParts.pop();
-      const potentialParentCode = tempParts.join(".");
-      if (validRecordsMapped.has(potentialParentCode)) {
-        parentResolved = potentialParentCode;
-        break; 
-      }
-    }
-    record.parent = parentResolved;
-  });
-
-  // --- STAGE 3: INHERITANCE ---
+  // --- STAGE 2: INHERITANCE AND CONTEXT ---
   const findInheritedField = (record, field) => {
-    if (record[field] && record[field] !== "N/A" && record[field] !== "") {
-      return record[field];
+    // For numeric additive duties, 0 is a placeholder that requires inheritance.
+    if (field === 'section301_rate') {
+      if (record[field] !== 0 && record[field] !== undefined) {
+        return record[field];
+      }
+    } else {
+      if (record[field] !== undefined && record[field] !== "N/A" && record[field] !== "") {
+        return record[field];
+      }
     }
     
     let currentParent = record.parent;
     while (currentParent) {
       const ancestor = validRecordsMapped.get(currentParent);
-      if (ancestor && ancestor[field] && ancestor[field] !== "N/A" && ancestor[field] !== "") {
-        if (field === 'section301_rate' && ancestor[field] === 0) {
-          // keep searching
+      if (ancestor) {
+        if (field === 'section301_rate') {
+          if (ancestor[field] !== 0 && ancestor[field] !== undefined) {
+             return ancestor[field];
+          }
         } else {
-          return ancestor[field];
+          if (ancestor[field] !== undefined && ancestor[field] !== "N/A" && ancestor[field] !== "") {
+            return ancestor[field];
+          }
         }
+        currentParent = ancestor.parent;
+      } else {
+        currentParent = null;
       }
-      currentParent = ancestor ? ancestor.parent : null;
     }
     return (field === 'section301_rate') ? 0 : "";
   };
 
-  const findHierarchyDescription = (record) => {
-    let parts = [record.description];
+  const getAncestors = (record) => {
+    const ancestors = [];
     let currentParent = record.parent;
     while (currentParent) {
       const ancestor = validRecordsMapped.get(currentParent);
       if (ancestor) {
-        parts.unshift(ancestor.description);
+        ancestors.unshift({
+          code: ancestor.code,
+          description: ancestor.description
+        });
         currentParent = ancestor.parent;
       } else {
         currentParent = null; 
       }
     }
-    return parts.join(" > ");
+    return ancestors;
   };
 
+  // Identify true structural parents
+  const parentSet = new Set(rawList.map(r => r.parent).filter(Boolean));
+
   const finalResults = rawList.map(record => {
-    const { _raw, ...cleanRecord } = record;
-    cleanRecord.description = findHierarchyDescription(record);
+    record.is_leaf = !parentSet.has(record.code);
+    record.ancestors = getAncestors(record);
+    
+    // Create the full description path for search and UI display
+    const descParts = record.ancestors.map(a => a.description);
+    descParts.push(record.description);
+    record.full_description = descParts.join(" > ");
 
-    cleanRecord.general_rate = findInheritedField(record, "general_rate");
-    cleanRecord.special_rate = findInheritedField(record, "special_rate");
-    cleanRecord.other_rate = findInheritedField(record, "other_rate");
-    cleanRecord.gender = findInheritedField(record, "gender");
-    cleanRecord.material = findInheritedField(record, "material");
-    cleanRecord.fabric = findInheritedField(record, "fabric");
-    cleanRecord.feature = findInheritedField(record, "feature");
-    cleanRecord.section301_rate = findInheritedField(record, "section301_rate");
+    // Inherit properties
+    record.general_rate = findInheritedField(record, "general_rate");
+    record.special_rate = findInheritedField(record, "special_rate");
+    record.other_rate = findInheritedField(record, "other_rate");
+    record.gender = findInheritedField(record, "gender");
+    record.material = findInheritedField(record, "material");
+    record.fabric = findInheritedField(record, "fabric");
+    record.feature = findInheritedField(record, "feature");
+    record.section301_rate = findInheritedField(record, "section301_rate");
 
-    return cleanRecord;
+    return record;
   });
 
   return finalResults;

@@ -8,6 +8,7 @@ import FilterSection from './components/FilterSection';
 import ResultsContainer from './components/ResultsContainer';
 import DetailModal from './components/DetailModal';
 import CategoryAlertModal from './components/CategoryAlertModal';
+import AdminMenu from './components/AdminMenu';
 
 function App() {
   const {
@@ -33,21 +34,6 @@ function App() {
   return (
     <div className="container">
       <Header />
-      
-      {/* 
-        <div className="section-container">
-          <div className="search-wrapper">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Search by HTS code or description..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {loading && <div className="loading-indicator">Loading...</div>}
-          </div>
-        </div>
-      */}
 
       <AdminSection 
         totalRecords={results.primary.length + results.related.length} 
@@ -85,6 +71,8 @@ function App() {
         content={alertModal.content}
         onClose={hideAlert}
       />
+
+      <AdminMenu />
     </div>
   );
 }

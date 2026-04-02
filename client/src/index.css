@@ -423,10 +423,23 @@ input[type="text"] {
     font-size: 12px;
 }
 
+.search-highlight {
+    background-color: #ffeb3b; /* Vibrant Yellow */
+    color: #000;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
 .highlight-search {
     background-color: #bbdefb;
     padding: 2px 4px;
     border-radius: 3px;
+}
+
+.row-description {
+    line-height: 1.5;
+    padding: 2px 0;
 }
 
 .highlight-gender {
@@ -1378,3 +1391,182 @@ transform: translateY(0);
     border-color: #667eea;
     background: #f0f4ff;
 }
+
+/* --- PREMIUM HTS MODAL TREE STYLES --- */
+.hts-modal-tree {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 30px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.tree-level {
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 20px;
+    border-left: 2px solid #e2e8f0; /* Softer solid line */
+}
+
+.tree-level:last-child {
+    border-left-color: transparent;
+}
+
+.tree-node {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: #fff;
+    border: 1px solid transparent;
+}
+
+.tree-node:hover {
+    background: #f8faff;
+    border-color: #e0e7ff;
+    transform: translateX(4px);
+}
+
+.tree-icon {
+    width: 22px;
+    height: 22px;
+    background: #6366f1; /* Modern Indigo */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+}
+
+.tree-code {
+    font-weight: 800;
+    color: #1e293b;
+    min-width: 90px;
+    font-variant-numeric: tabular-nums;
+}
+
+.tree-desc {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 14.5px;
+}
+
+.tree-siblings {
+    margin-left: 45px;
+    margin-top: 10px;
+    padding: 15px;
+    background: #fcfdfe;
+    border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.sibling-item {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.sibling-item:last-child { border-bottom: none; }
+
+.sibling-code {
+    font-weight: 700;
+    color: #94a3b8;
+    min-width: 80px;
+}
+
+.target-code-header {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-radius: 10px;
+    border: 1px solid #ddd6fe;
+    border-left: 6px solid #6366f1;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.target-code-header h4 {
+    color: #4338ca;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.target-code-header p {
+    color: #1e1b4b;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* --- PREMIUM DUTY CARD --- */
+.duty-card-additive {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 30px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.duty-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.duty-row:last-child {
+    border-bottom: none;
+    margin-top: 15px;
+    padding-top: 20px;
+    border-top: 2px solid #eef2ff;
+}
+
+.duty-label {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.duty-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.total-duty-row {
+    background: #fafbff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin: 10px -10px 0 -10px;
+}
+
+.total-duty-row .duty-label {
+    color: #4338ca;
+    font-weight: 700;
+}
+
+.total-duty-row .duty-value-big {
+    color: #4338ca;
+    font-size: 28px;
+    font-weight: 900;
+}
+

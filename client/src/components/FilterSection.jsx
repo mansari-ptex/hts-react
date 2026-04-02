@@ -13,51 +13,26 @@ function FilterSection({
     onReset, 
     onToggleHighlight, 
     highlightEnabled,
-    countries 
+    countries,
+    metadata
 }) {
   const [openMenu, setOpenMenu] = useState(null);
 
   const isMaterialLocked = selectedFilters.category && MATERIAL_NEUTRAL_CATEGORIES.has(normalizeText(selectedFilters.category));
 
+  // Helper to build dropdown items from metadata
+  const buildItems = (list, allLabel = 'All ▾') => [
+    { value: 'All', label: allLabel },
+    ...(list || []).map(val => ({ value: val, label: val }))
+  ];
+
   const filterData = {
-    material: [
-      { value: 'All', label: 'All ▾' },
-      { value: 'Knitted', label: 'Knitted or crocheted' },
-      { value: 'Woven', label: 'Woven or Non-Woven' }
-    ],
-    gender: [
-      { value: 'All', label: 'All ▾' },
-      { value: 'Babies', label: 'Babies' },
-      { value: 'Boys', label: 'Boys' },
-      { value: 'Girls', label: 'Girls' },
-      { value: 'Men', label: 'Men' },
-      { value: 'Women', label: 'Women' }
-    ],
+    material: buildItems(metadata.materials),
+    gender: buildItems(metadata.genders),
+    fabric: buildItems(metadata.fabrics),
+    feature: buildItems(metadata.features),
     importingCountry: [
       { value: USA_ENGINE.getImportingCountry(), label: USA_ENGINE.getImportingCountry() }
-    ],
-    fabric: [
-      { value: 'All', label: 'All ▾' },
-      { value: 'Artificial fibers', label: 'Artificial fibers' },
-      { value: 'Cotton', label: 'Cotton' },
-      { value: 'Fine animal hair', label: 'Fine animal hair' },
-      { value: 'Flax fibers', label: 'Flax fibers' },
-      { value: 'Linen (835)', label: 'Linen (835)' },
-      { value: 'Man-made fibers', label: 'Man-made fibers' },
-      { value: 'Other textile materials', label: 'Other textile materials' },
-      { value: 'Silk or silk waste', label: 'Silk or silk waste' },
-      { value: 'Subject to cotton restraints (334)', label: 'Subject to cotton restraints (334)' },
-      { value: 'Subject to man-made fiber restraints (634)', label: 'Subject to man-made fiber restraints (634)' },
-      { value: 'Subject to wool restraints (434)', label: 'Subject to wool restraints (434)' },
-      { value: 'Synthetic fibers', label: 'Synthetic fibers' },
-      { value: 'Vegetable fibers', label: 'Vegetable fibers' },
-      { value: 'wool', label: 'Wool' }
-    ],
-    feature: [
-      { value: 'All', label: 'All ▾' },
-      { value: 'Knit to Shape', label: 'Knit to Shape' },
-      { value: 'Recreational Performance Outerwear', label: 'Recreational Performance Outerwear' },
-      { value: 'Water resistant', label: 'Water resistant' }
     ]
   };
 

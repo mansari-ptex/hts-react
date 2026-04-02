@@ -25,12 +25,48 @@ const HTSLegend = ({ records }) => {
 };
 
 /**
+ * Helper to highlight keywords in text
+ */
+const HighlightedText = ({ text, keywords, enabled }) => {
+  if (!enabled || !keywords || keywords.length === 0 || !text) {
+    return <span>{text}</span>;
+  }
+
+  // Escape special regex characters in keywords and join them 
+  const escapedKeywords = keywords
+    .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .filter(kw => kw.trim() !== '');
+
+  if (escapedKeywords.length === 0) return <span>{text}</span>;
+
+  const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
+  const parts = text.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, i) => 
+        regex.test(part) ? <mark key={i} className="search-highlight">{part}</mark> : part
+      )}
+    </span>
+  );
+};
+
+/**
  * Main ResultsContainer
  */
 function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFilters }) {
   const [showRelated, setShowRelated] = useState(false);
   const { primary, related } = results;
   const exportingCountry = selectedFilters.exportingCountry || 'Select Country';
+
+  // Derive keywords from active filters (e.g. "Men", "Cotton", "Knitted")
+  const filterKeywords = [
+    selectedFilters.gender,
+    selectedFilters.material,
+    selectedFilters.fabric,
+    selectedFilters.feature,
+    selectedFilters.category
+  ].filter(val => val && val !== 'All' && val !== '');
 
   if (primary.length === 0 && related.length === 0) {
     return (
@@ -60,7 +96,7 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
           <table className="results-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th> # </th>
                 <th>HTS Code</th>
                 <th>Description</th>
                 <th>General Rate</th>
@@ -69,15 +105,17 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
               </tr>
             </thead>
             <tbody>
-              {primary.map((item, idx) => (
-                <ResultRow 
-                  key={item.code + idx} 
-                  item={item} 
-                  index={idx} 
-                  onShowDetails={onShowDetails}
-                  exportingCountry={exportingCountry}
-                />
-              ))}
+                  {primary.map((item, idx) => (
+                    <ResultRow 
+                      key={item.code + idx} 
+                      item={item} 
+                      index={idx} 
+                      onShowDetails={onShowDetails}
+                      exportingCountry={exportingCountry}
+                      highlightEnabled={highlightEnabled}
+                      keywords={filterKeywords}
+                    />
+                  ))}
             </tbody>
           </table>
         </div>
@@ -95,7 +133,7 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
                 <table className="results-table">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th> # </th>
                       <th>HTS Code</th>
                       <th>Description</th>
                       <th>General</th>
@@ -110,6 +148,8 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
                         index={idx} 
                         onShowDetails={onShowDetails}
                         exportingCountry={exportingCountry}
+                        highlightEnabled={highlightEnabled}
+                        keywords={filterKeywords}
                       />
                     ))}
                   </tbody>
@@ -126,7 +166,7 @@ function ResultsContainer({ results, highlightEnabled, onShowDetails, selectedFi
   );
 }
 
-function ResultRow({ item, index, onShowDetails, exportingCountry }) {
+function ResultRow({ item, index, onShowDetails, exportingCountry, highlightEnabled, keywords }) {
   const duty = getEffectiveDuty(item, exportingCountry);
   
   return (
@@ -140,7 +180,7 @@ function ResultRow({ item, index, onShowDetails, exportingCountry }) {
             className="hts-code-link"
             onClick={(e) => e.stopPropagation()}
           >
-            {item.code}
+            <HighlightedText text={item.code} keywords={keywords} enabled={highlightEnabled} />
           </a>
           <button
             className="hts-info-btn"
@@ -150,7 +190,11 @@ function ResultRow({ item, index, onShowDetails, exportingCountry }) {
           </button>
         </div>
       </td>
-      <td>{item.description}</td>
+      <td>
+        <div className="row-description">
+            <HighlightedText text={item.description} keywords={keywords} enabled={highlightEnabled} />
+        </div>
+      </td>
       <td>{item.general_rate}</td>
       <td className="special-rate-cell">{item.special_rate || '—'}</td>
       <td className={`final-duty-cell ${duty.type.includes('Special') ? 'benefit' : ''}`}>

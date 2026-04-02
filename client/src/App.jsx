@@ -24,7 +24,8 @@ function App() {
     resetFilters,
     setSearchTerm,
     toggleHighlight,
-    hideAlert
+    hideAlert,
+    metadata
   } = useHTS();
 
   const [detailModal, setDetailModal] = React.useState({ open: false, data: null });
@@ -33,18 +34,20 @@ function App() {
     <div className="container">
       <Header />
       
-      <div className="section-container">
-        <div className="search-wrapper">
-          <input 
-              type="text" 
-              id="searchInput" 
-              placeholder="Search by HTS code or description..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {loading && <div className="loading-indicator">Loading...</div>}
+      {/* 
+        <div className="section-container">
+          <div className="search-wrapper">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search by HTS code or description..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {loading && <div className="loading-indicator">Loading...</div>}
+          </div>
         </div>
-      </div>
+      */}
 
       <AdminSection 
         totalRecords={results.primary.length + results.related.length} 
@@ -58,6 +61,7 @@ function App() {
         onToggleHighlight={toggleHighlight}
         highlightEnabled={highlightEnabled}
         countries={allCountries}
+        metadata={metadata}
       />
 
       <ResultsContainer 

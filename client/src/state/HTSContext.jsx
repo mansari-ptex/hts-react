@@ -23,7 +23,8 @@ const initialState = {
   status: { message: '', type: '' },
   loading: false,
   error: null,
-  alertModal: { open: false, content: '' }
+  alertModal: { open: false, content: '' },
+  metadata: { genders: [], materials: [], fabrics: [], features: [] }
 };
 
 function htsReducer(state, action) {
@@ -56,6 +57,8 @@ function htsReducer(state, action) {
       return { ...state, alertModal: { open: true, content: action.payload } };
     case 'HIDE_ALERT':
       return { ...state, alertModal: { open: false, content: '' } };
+    case 'SET_METADATA':
+      return { ...state, metadata: action.payload };
     default:
       return state;
   }
@@ -81,8 +84,10 @@ export const HTSProvider = ({ children }) => {
         .sort((a, b) => a.localeCompare(b))
         .map(name => ({ name }));
       dispatch({ type: 'SET_COUNTRIES', payload: countriesList });
+      
+      const metadata = await apiService.getMetadata();
+      dispatch({ type: 'SET_METADATA', payload: metadata });
 
-      // No longer fetching 1MB+ master data file
       dispatch({ type: 'SET_LOADING', payload: false });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err.message });
@@ -107,20 +112,26 @@ export const HTSProvider = ({ children }) => {
   const runSearch = useCallback(async () => {
     const { selectedFilters, searchTerm } = state;
     
-    // Search needs either a category or a search term
-    const query = searchTerm || selectedFilters.category;
-    if (!query) return;
+    // Search can now run even without a query to support pure categorical filtering
+    const query = searchTerm || selectedFilters.category || '';
 
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const results = await apiService.searchHTS(query);
+      const data = await apiService.searchHTS(query, {
+        gender: selectedFilters.gender,
+        material: selectedFilters.material,
+        fabric: selectedFilters.fabric,
+        feature: selectedFilters.feature
+      });
       
-      // Map results to the primary/related structure 
-      // For now, API results go to primary as they are pre-processed
+      // Data now comes as { primary, related } from the backend
       dispatch({ 
         type: 'SET_RESULTS', 
         payload: { 
-            results: { primary: results, related: [] }, 
+            results: { 
+                primary: data.primary || [], 
+                related: data.related || [] 
+            }, 
             keywords: [query] 
         } 
       });
@@ -144,12 +155,17 @@ export const HTSProvider = ({ children }) => {
 
   // Trigger search on filter OR searchTerm changes
   useEffect(() => {
-    const query = state.searchTerm || state.selectedFilters.category;
-    if (query) {
-        const timeoutId = setTimeout(runSearch, 300); // Small debounce for typing
-        return () => clearTimeout(timeoutId);
-    }
-  }, [state.selectedFilters.category, state.searchTerm, runSearch]);
+    const timeoutId = setTimeout(runSearch, 300); // Small debounce for typing
+    return () => clearTimeout(timeoutId);
+  }, [
+      state.selectedFilters.category, 
+      state.selectedFilters.gender,
+      state.selectedFilters.material,
+      state.selectedFilters.fabric,
+      state.selectedFilters.feature,
+      state.searchTerm, 
+      runSearch
+  ]);
 
   const value = {
     ...state,

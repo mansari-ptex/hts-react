@@ -17,8 +17,11 @@ export const getEffectiveDuty = (item, countryName) => {
           engineResult.column === 'special' ? 'Special (FTA)' : 'General',
     isMatch: engineResult.column !== 'general',
     section301: parseFloat(engineResult.additionalDuty1) || 0,
+    section122: parseFloat(engineResult.additionalDuty2) || 0,
+    sanction: parseFloat(engineResult.sanctionDuty) || 0,
     total: engineResult.totalDuty,
-    inherited: engineResult.inherited
+    inherited: engineResult.inherited,
+    hasExclusions: item.has_exclusions || false
   };
 };
 

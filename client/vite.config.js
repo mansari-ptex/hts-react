@@ -1,17 +1,17 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
+      "/api": {
+        target: "http://192.168.1.206:5000",
         changeOrigin: true,
         timeout: 120000, // 2 minutes
-        proxyTimeout: 120000
-      }
-    }
-  }
-})
+        proxyTimeout: 120000,
+      },
+    },
+  },
+});

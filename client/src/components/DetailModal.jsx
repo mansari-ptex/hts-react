@@ -27,6 +27,10 @@ function DetailModal({ data, onClose, exportingCountry }) {
   if (!data) return null;
 
   const duty = getEffectiveDuty(data, exportingCountry);
+  const addlDuty1 = duty.section301 || 0;
+  const addlDuty2 = duty.section122 || 0;
+  const sanctionDuty = duty.sanction || 0;
+  const totalDutyVal = duty.total ? duty.total.replace('%', '') : "0.00";
   
   return (
     <div className="modal" style={{ display: 'block' }}>
@@ -77,15 +81,33 @@ function DetailModal({ data, onClose, exportingCountry }) {
                 {duty.inherited && <span className="badge-inherited" style={{marginLeft: '8px', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', border: '1px solid #ddd'}}>Inherited</span>}
               </span>
             </div>
-            {duty.section301 > 0 && (
-              <div className="duty-row" style={{ color: '#c53030' }}>
-                <span className="duty-label">Section 301 Duty:</span>
-                <span className="duty-value">+ {duty.section301.toFixed(2)}%</span>
+            {addlDuty1 > 0 && (
+              <div className="duty-row">
+                <span className="duty-label">Additional Duty 1 (Section 301):</span>
+                <span className="duty-value">{addlDuty1.toFixed(2)}%</span>
               </div>
             )}
-            <div className="total-duty-row">
-              <span className="total-duty-label">Final Duty Rate:</span>
-              <span className="total-duty-value">{duty.total}</span>
+            {addlDuty2 > 0 && (
+              <div className="duty-row">
+                <span className="duty-label">Additional Duty 2 (Import Surcharge):</span>
+                <span className="duty-value">{addlDuty2.toFixed(2)}%</span>
+              </div>
+            )}
+            {sanctionDuty > 0 && (
+              <div className="duty-row" style={{ backgroundColor: '#fef2f2', padding: '10px 15px', borderRadius: '6px', margin: '4px -10px' }}>
+                <span className="duty-label" style={{ color: '#b91c1c' }}>Trade Sanctions Surcharge:</span>
+                <span className="duty-value" style={{ color: '#b91c1c' }}>{sanctionDuty.toFixed(2)}%</span>
+              </div>
+            )}
+            {duty.hasExclusions && (
+              <div className="duty-row" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 15px', borderRadius: '6px', margin: '8px -10px' }}>
+                <span className="duty-label" style={{ color: '#166534', fontWeight: 'wrap' }}>ⓘ Section 301 Exclusion Exists:</span>
+                <span className="duty-value" style={{ color: '#166534', fontSize: '13px', fontWeight: '500' }}>May qualify for tariff exemption</span>
+              </div>
+            )}
+            <div className="duty-row total-duty-row">
+              <span className="duty-label">Total Duty Rate:</span>
+              <span className="duty-value-big">{totalDutyVal}%</span>
             </div>
             <div className="duty-row" style={{ marginTop: '10px' }}>
               <span className="duty-label">Export Units:</span>

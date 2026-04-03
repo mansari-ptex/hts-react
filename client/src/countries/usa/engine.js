@@ -90,25 +90,30 @@ export const USA_ENGINE = {
             };
         }
     
-        const iso = COUNTRY_CODE_MAP[exportingCountry];
+        const countryKey = Object.keys(COUNTRY_CODE_MAP).find(k => k.toLowerCase() === exportingCountry?.toLowerCase());
+        const iso = countryKey ? COUNTRY_CODE_MAP[countryKey] : null;
         const rateField = this.getRateColumn(exportingCountry, item, findParentWithRateFn);
         let rate = item[rateField + "_rate"];
     
         const overrides = getCountryOverrides(exportingCountry) || {};
         
-        // Use section301_rate from data for China, otherwise use overrides
         const additional1 = (iso === 'CN' && item.section301_rate) 
             ? `${item.section301_rate}%` 
             : (overrides.additionalDuty1 ?? null);
             
-        const additional2 = overrides.additionalDuty2 ?? null;
+        const additional2 = item.section122_rate 
+            ? `${item.section122_rate}%` 
+            : (overrides.additionalDuty2 ?? null);
+
+        // Sanction rate (e.g. 35% Russian Federation tariff)
+        const sanctionDuty = ((iso === 'RU' || iso === 'BY') && item.sanction_rate)
+            ? `${item.sanction_rate}%`
+            : null;
     
         const parseNum = (v) => {
             if (v === null || v === undefined || v === "") return 0;
             if (typeof v === "number") return v;
             
-            // Handle X% + Y strings (e.g. "41¢/kg + 16.3%")
-            // We focus on the percentage part for the total display
             const percentMatch = String(v).match(/(\d+(?:\.\d+)?)%/);
             if (percentMatch) return parseFloat(percentMatch[1]);
             
@@ -116,14 +121,15 @@ export const USA_ENGINE = {
             return m ? parseFloat(m[0]) : 0;
         };
     
-        const computeTotalDisplay = (baseRate, additional1, additional2) => {
+        const computeTotalDisplay = (baseRate, additional1, additional2, sanctionD) => {
             const baseNum = parseNum(baseRate);
             const add1Num = parseNum(additional1);
             const add2Num = parseNum(additional2);
+            const sanctionNum = parseNum(sanctionD);
         
             if (baseRate === "N/A" || baseRate === null) return "N/A";
         
-            const finalTotal = baseNum + add1Num + add2Num;
+            const finalTotal = baseNum + add1Num + add2Num + sanctionNum;
             return finalTotal.toFixed(2) + "%";
         };
     
@@ -137,7 +143,8 @@ if (!rate || rate === "" || rate === "N/A") {
             column: rateField,
             additionalDuty1: additional1,
             additionalDuty2: additional2,
-            totalDuty: computeTotalDisplay(inheritedRate, additional1, additional2)
+            sanctionDuty: sanctionDuty,
+            totalDuty: computeTotalDisplay(inheritedRate, additional1, additional2, sanctionDuty)
         };
     }
 
@@ -147,6 +154,7 @@ if (!rate || rate === "" || rate === "N/A") {
         column: rateField,
         additionalDuty1: null,
         additionalDuty2: null,
+        sanctionDuty: null,
         totalDuty: "N/A"
     };
 }
@@ -157,7 +165,8 @@ return {
     column: rateField,
     additionalDuty1: additional1,
     additionalDuty2: additional2,
-    totalDuty: computeTotalDisplay(rate, additional1, additional2)
+    sanctionDuty: sanctionDuty,
+    totalDuty: computeTotalDisplay(rate, additional1, additional2, sanctionDuty)
 };
     }
 };

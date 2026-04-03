@@ -75,9 +75,11 @@ export const buildChapter99Map = (rawData) => {
   if (!Array.isArray(rawData)) return {};
   const map = {};
   rawData.forEach(row => {
-    if (row.htsno && row.htsno.startsWith('99') && row.general) {
+    if (row.htsno && row.htsno.startsWith('99')) {
       const code = row.htsno.replace(/\./g, '').trim();
-      const match = row.general.match(/(\d+\.?\d*)%/);
+      // Improved regex to find any percentage in general or other columns
+      const rateString = [row.general, row.other].filter(Boolean).join(" ");
+      const match = rateString.match(/(\d+\.?\d*)%/);
       if (match) {
         map[code] = parseFloat(match[1]);
       }
@@ -92,17 +94,15 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
   // --- STAGE 1: HIERARCHY BUILDING ---
   const validRecordsMapped = new Map();
   const rawList = [];
-  const indentStack = []; // will hold { code, indent }
+  const indentStack = []; 
 
   for (let i = 0; i < rawData.length; i++) {
     const row = rawData[i];
-    
-    // Skip invalid rows without a description
     if (!row.description) continue;
 
     let code = (row.htsno || "").trim();
     if (!code) {
-      code = `sys_group_${i}`; // Synthetic ID for grouping nodes
+      code = `sys_group_${i}`; 
     }
 
     const indent = parseInt(row.indent || "0", 10);
@@ -112,16 +112,38 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
     const units = Array.isArray(row.units) ? row.units : (row.units ? [row.units] : []);
     const cleanUnits = [...new Set(units.map(u => stripHtml(u)))].filter(Boolean);
 
-    // Section 301 Rate extraction
+    // Extraction of Multiple Additional Duties (Section 301, 122, etc.)
     let section301Rate = 0;
+    let section122Rate = 0;
+    let sanctionRate = 0;
+    let hasExclusions = false;
+
     if (row.footnotes && row.footnotes.length > 0) {
       row.footnotes.forEach(fn => {
-        const match = fn.value?.match(/9903\.?88\.?\d{2}/);
-        if (match) {
-          const refCode = match[0].replace(/\./g, '');
-          if (ch99Map[refCode]) {
-            section301Rate = ch99Map[refCode];
-          }
+        // Look for any 9903 code in the footnote
+        const codesInNote = (fn.value || "").match(/9903\.?\d{2}\.?\d{2}/g);
+        if (codesInNote) {
+          codesInNote.forEach(rawCode => {
+             const cleanRefCode = rawCode.replace(/\./g, '');
+             const rate = ch99Map[cleanRefCode] || 0;
+             
+             // Detect Exclusions (e.g. 9903.88.25 through 9903.88.67 are exclusion lists)
+             if (cleanRefCode.match(/^990388(2[5-9]|[3-6]\d)$/)) {
+                 hasExclusions = true;
+             }
+
+             if (rate > 0) {
+                if (cleanRefCode.startsWith('990388')) {
+                  section301Rate = rate + 10;
+                } else if (cleanRefCode.startsWith('990303')) {
+                  section122Rate = rate;
+                } else if (cleanRefCode.startsWith('990390')) {
+                  sanctionRate = rate;
+                } else {
+                  if (section301Rate === 0) section301Rate = rate + 10;
+                }
+             }
+          });
         }
       });
     }
@@ -144,6 +166,9 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
       other_rate: row.other || "",
       unit: cleanUnits,
       section301_rate: section301Rate,
+      section122_rate: section122Rate,
+      sanction_rate: sanctionRate,
+      has_exclusions: hasExclusions,
       level: indent,
       parent: parentCode,
       is_leaf: false
@@ -159,11 +184,12 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
 
   // --- STAGE 2: INHERITANCE AND CONTEXT ---
   const findInheritedField = (record, field) => {
-    // For numeric additive duties, 0 is a placeholder that requires inheritance.
-    if (field === 'section301_rate') {
-      if (record[field] !== 0 && record[field] !== undefined) {
-        return record[field];
-      }
+    const isAdditiveDuty = ['section301_rate', 'section122_rate', 'sanction_rate'].includes(field);
+    
+    if (isAdditiveDuty) {
+      if (record[field] !== 0 && record[field] !== undefined) return record[field];
+    } else if (field === 'has_exclusions') {
+      if (record[field] === true) return true;
     } else {
       if (record[field] !== undefined && record[field] !== "N/A" && record[field] !== "") {
         return record[field];
@@ -174,10 +200,10 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
     while (currentParent) {
       const ancestor = validRecordsMapped.get(currentParent);
       if (ancestor) {
-        if (field === 'section301_rate') {
-          if (ancestor[field] !== 0 && ancestor[field] !== undefined) {
-             return ancestor[field];
-          }
+        if (isAdditiveDuty) {
+          if (ancestor[field] !== 0 && ancestor[field] !== undefined) return ancestor[field];
+        } else if (field === 'has_exclusions') {
+          if (ancestor[field] === true) return true;
         } else {
           if (ancestor[field] !== undefined && ancestor[field] !== "N/A" && ancestor[field] !== "") {
             return ancestor[field];
@@ -188,7 +214,7 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
         currentParent = null;
       }
     }
-    return (field === 'section301_rate') ? 0 : "";
+    return isAdditiveDuty ? 0 : (field === 'has_exclusions' ? false : "");
   };
 
   const getAncestors = (record) => {
@@ -230,6 +256,9 @@ export const sanitizeHTS = (rawData, ch99Map = {}) => {
     record.fabric = findInheritedField(record, "fabric");
     record.feature = findInheritedField(record, "feature");
     record.section301_rate = findInheritedField(record, "section301_rate");
+    record.section122_rate = findInheritedField(record, "section122_rate");
+    record.sanction_rate = findInheritedField(record, "sanction_rate");
+    record.has_exclusions = findInheritedField(record, "has_exclusions");
 
     return record;
   });

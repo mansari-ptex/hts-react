@@ -2,7 +2,7 @@
  * API Service for HTS Data
  */
 
-const BASE_URL = '/api';
+const BASE_URL = "http://192.168.1.206:5000/api";
 
 export const apiService = {
   /**
@@ -11,12 +11,16 @@ export const apiService = {
   searchHTS: async (query, filters = {}) => {
     try {
       const { gender, material, fabric, feature } = filters;
-      let url = `${BASE_URL}/search?q=${encodeURIComponent(query || '')}`;
-      
-      if (gender && gender !== 'All') url += `&gender=${encodeURIComponent(gender)}`;
-      if (material && material !== 'All') url += `&material=${encodeURIComponent(material)}`;
-      if (fabric && fabric !== 'All') url += `&fabric=${encodeURIComponent(fabric)}`;
-      if (feature && feature !== 'All') url += `&feature=${encodeURIComponent(feature)}`;
+      let url = `${BASE_URL}/search?q=${encodeURIComponent(query || "")}`;
+
+      if (gender && gender !== "All")
+        url += `&gender=${encodeURIComponent(gender)}`;
+      if (material && material !== "All")
+        url += `&material=${encodeURIComponent(material)}`;
+      if (fabric && fabric !== "All")
+        url += `&fabric=${encodeURIComponent(fabric)}`;
+      if (feature && feature !== "All")
+        url += `&feature=${encodeURIComponent(feature)}`;
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -29,11 +33,11 @@ export const apiService = {
 
   syncHTS: async () => {
     try {
-      const res = await fetch(`${BASE_URL}/sync`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      const res = await fetch(`${BASE_URL}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
-      
+
       if (!res.ok) {
         const errorText = await res.text();
         let errorMessage = `Server error (${res.status})`;
@@ -45,7 +49,7 @@ export const apiService = {
         }
         throw new Error(errorMessage);
       }
-      
+
       return await res.json();
     } catch (error) {
       console.error("API Error: syncHTS failed", error);
@@ -94,7 +98,7 @@ export const apiService = {
    */
   getHierarchy: async (code) => {
     const response = await fetch(`${BASE_URL}/hierarchy/${code}`);
-    if (!response.ok) throw new Error('Failed to fetch hierarchy');
+    if (!response.ok) throw new Error("Failed to fetch hierarchy");
     return response.json();
-  }
+  },
 };
